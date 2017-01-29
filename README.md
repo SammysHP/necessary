@@ -1,4 +1,4 @@
-# necessary – Widgets and tools for the awesome window manager
+# necessary: Widgets and tools for awesome wm
 
 Experimental, unstable, not really well tested. Have fun!
 
