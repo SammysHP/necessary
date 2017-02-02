@@ -1,11 +1,10 @@
-local setmetatable = setmetatable
 local awful = require("awful")
-local textbox = require("wibox.widget.textbox")
 local beautiful = require("beautiful")
 local gears = require("gears")
+local textbox = require("wibox.widget.textbox")
 local mpc = require("necessary.libs.mpc")
 
-local mpd = { mt = {} }
+local mpd = {}
 
 function mpd:_update_widget()
     local state = self._state.status.state
@@ -19,13 +18,13 @@ function mpd:_update_widget()
     end
 
     if state == "play" then
-        self.widget.text = "♫ ▶ " .. playlist_status()
+        self.widget.text = "▶ " .. playlist_status()
     elseif state == "pause" then
-        self.widget.text = "♫ ⏸ " .. playlist_status()
+        self.widget.text = "⏸ " .. playlist_status()
     elseif state == "stop" then
-        self.widget.text = "♫ ⏹ " .. playlist_status()
+        self.widget.text = "⏹ " .. playlist_status()
     else
-        self.widget.text = "♫ ❌ -/-"
+        self.widget.text = "❌ -/-"
     end
 
     local tooltip_text = ""
@@ -58,12 +57,14 @@ end
 
 --- Create a new mpd widget.
 -- @tparam table args Arguments.
--- @tparam[opt=localhost] string args.host TODO
--- @tparam[opt=port] number args.host TODO
--- @tparam[opt=] string args.password TODO
--- @tparam[opt=Mod4] string args.modkey TODO
--- @tparam[opt=false] boolean args.delayed_connect TODO
--- @tparam[opt=60] number args.delayed_timeout TODO
+-- @tparam[opt=localhost] string args.host MPD server host
+-- @tparam[opt=port] number args.host MPD server port
+-- @tparam[opt=] string args.password MPD server password
+-- @tparam[opt=Mod4] string args.modkey Modkey for mouse bindings
+-- @tparam[opt=false] boolean args.delayed_connect Connect to localhost only if mpd is running
+-- @tparam[opt=60] number args.delayed_timeout Timeout for delayed connect retry
+-- @tparam[opt=ncmpcpp] string args.client MPD client to launch
+-- @tparam[opt=x-terminal-emulator] string args.terminal Terminal emulator for ncmpcpp fallback
 -- @treturn mpd
 -- @function necessary.widgets.mpd.new
 function mpd.new(args)
@@ -75,12 +76,14 @@ function mpd.new(args)
     }, { __index = mpd })
 
     args = args or {}
-    local host     = args.host or "localhost"
-    local port     = args.port or 6600
-    local password = args.password or ""
-    local modkey   = args.modkey or "Mod4"
+    local host            = args.host or "localhost"
+    local port            = args.port or 6600
+    local password        = args.password or ""
+    local modkey          = args.modkey or modkey or "Mod4"
     local delayed_connect = host == "localhost" and args.delayed_connect
     local delayed_timeout = args.delayed_timeout or 60
+    local terminal        = args.terminal or terminal or "x-terminal-emulator"
+    local mpdclient       = args.client or terminal .. " -e ncmpcpp"
 
     self.widget = textbox()
 
@@ -106,7 +109,6 @@ function mpd.new(args)
         "currentsong", function(success, result)
             if not success then return end
             self._state.currentsong = result
-            -- pcall(mpd._update_widget, self) TODO
             self:_update_widget()
         end
     )
@@ -140,7 +142,7 @@ function mpd.new(args)
     self.widget:buttons(awful.util.table.join(
         awful.button({        }, 1, function() self:toggle_play() end),
         awful.button({        }, 3, function()
-                                        awful.spawn(terminal .. " -e ncmpcpp", false)
+                                        awful.spawn(mpdclient, false)
                                     end),
         awful.button({ modkey }, 1, function() self:previous() end),
         awful.button({ modkey }, 3, function() self:next() end)
@@ -148,11 +150,5 @@ function mpd.new(args)
 
     return self
 end
-
--- function mpd.mt.__call(_, ...)
---     return mpd.new(...)
--- end
---
--- return setmetatable(mpd, mpd.mt)
 
 return mpd
