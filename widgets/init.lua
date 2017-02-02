@@ -1,4 +1,4 @@
 return {
     mpd = require("necessary.widgets.mpd"),
-    volume = require("necessary.widgets.volume"),
+    alsavolume = require("necessary.widgets.alsavolume"),
 }

@@ -2,9 +2,9 @@ local awful = require("awful")
 local gears = require("gears")
 local textbox = require("wibox.widget.textbox")
 
-local volume = {}
+local alsavolume = {}
 
-function volume:_update_widget()
+function alsavolume:_update_widget()
     awful.spawn.easy_async("amixer -M sget " .. self._channel, function(stdout, stderr, reason, exit_code)
         local status = stdout
         local volume = string.match(status, "(%d?%d?%d)%%")
@@ -23,30 +23,34 @@ function volume:_update_widget()
     end)
 end
 
-function volume:raise()
+function alsavolume:raise()
     awful.spawn("amixer -q set " .. self._channel .. " 1+ unmute", false)
     self:_update_widget()
 end
 
-function volume:lower()
+function alsavolume:lower()
     awful.spawn("amixer -q set " .. self._channel .. " 1- unmute", false)
     self:_update_widget()
 end
 
-function volume:mute()
+function alsavolume:mute()
     awful.spawn("amixer -q set " .. self._channel .. " toggle", false)
     self:_update_widget()
 end
 
---- Create a new volume widget.
--- @treturn volume
--- @function necessary.widgets.volume.new
-function volume.new(args)
-    local self = setmetatable({}, { __index = volume })
+--- Create a new ALSA volume widget.
+-- @tparam table args Arguments.
+-- @tparam[opt=Master] string args.channel ALSA channel to monitor and control
+-- @tparam[opt=x-terminal-emulator] string args.terminal Terminal emulator for alsamixer
+-- @tparam[opt=30] number args.timeout Timeout for widget update
+-- @treturn alsavolume
+-- @function necessary.widgets.alsavolume.new
+function alsavolume.new(args)
+    local self = setmetatable({}, { __index = alsavolume })
 
     local args = args or {}
     local timeout = args.timeout or 30
-    local terminal = terminal or args.terminal or "x-terminal-emulator"
+    local terminal = args.terminal or terminal or "x-terminal-emulator"
     self._channel = args.channel or "Master"
 
     self.widget = textbox()
@@ -63,4 +67,4 @@ function volume.new(args)
     return self
 end
 
-return volume
+return alsavolume
