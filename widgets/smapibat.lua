@@ -55,9 +55,10 @@ local function get_battery_status(adapter)
     return percent .. indicator .. power .. remaining
 end
 
-function smapibat.new(adapter, interval)
-    adapter = adapter or "BAT0"
-    interval = interval or 15
+function smapibat.new(args)
+    args = args or {}
+    local adapter = args.adapter or "BAT0"
+    local interval = args.interval or 15
 
     local w = textbox()
 
