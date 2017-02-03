@@ -1,4 +1,5 @@
 local awful = require("awful")
+local beautiful = require("beautiful")
 local gears = require("gears")
 local textbox = require("wibox.widget.textbox")
 
@@ -8,6 +9,7 @@ function alsavolume:_update_widget()
     awful.spawn.easy_async("amixer -M sget " .. self._channel, function(stdout, stderr, reason, exit_code)
         local status = stdout
         local volume = string.match(status, "(%d?%d?%d)%%")
+        local sscolor = beautiful.widget_fg_urgent or beautiful.bg_urgent or "#ff0000"
 
         status = string.match(status, "%[(o[^%]]*)%]")
 
@@ -16,7 +18,7 @@ function alsavolume:_update_widget()
         elseif string.find(status, "on", 1, true) then
             volume = volume .. "%"
         else
-            volume = '<span strikethrough="true" strikethrough_color="#ff0000">' .. volume .. '%</span>'
+            volume = '<span strikethrough="true" strikethrough_color="' .. sscolor .. '">' .. volume .. '%</span>'
         end
 
         self.widget.markup = volume
