@@ -12,14 +12,14 @@ function alsavolume:_update_widget()
         status = string.match(status, "%[(o[^%]]*)%]")
 
         if not status then
-            volume = "🔊 ?"
+            volume = "??"
         elseif string.find(status, "on", 1, true) then
-            volume = "🔊 " .. volume
+            volume = volume .. "%"
         else
-            volume = "🔇 " .. volume
+            volume = '<span strikethrough="true" strikethrough_color="#ff0000">' .. volume .. '%</span>'
         end
 
-        self.widget.text = volume
+        self.widget.markup = volume
     end)
 end
 
