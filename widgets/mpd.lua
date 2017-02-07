@@ -24,7 +24,12 @@ function mpd:_update_widget()
     elseif state == "stop" then
         self.widget.text = "⏹ " .. playlist_status()
     else
-        self.widget.text = "❌ -/-"
+        local text = '❌ -/-'
+        local color = beautiful.widget_fg_inactive
+        if color then
+            text = '<span color="' .. color .. '">' .. text .. '</span>'
+        end
+        self.widget.markup = text
     end
 
     local tooltip_text = ""
@@ -60,7 +65,6 @@ end
 -- @tparam[opt=localhost] string args.host MPD server host
 -- @tparam[opt=port] number args.host MPD server port
 -- @tparam[opt=] string args.password MPD server password
--- @tparam[opt=Mod4] string args.modkey Modkey for mouse bindings
 -- @tparam[opt=false] boolean args.delayed_connect Connect to localhost only if mpd is running
 -- @tparam[opt=60] number args.delayed_timeout Timeout for delayed connect retry
 -- @tparam[opt=ncmpcpp] string args.client MPD client to launch
@@ -79,7 +83,6 @@ function mpd.new(args)
     local host            = args.host or "localhost"
     local port            = args.port or 6600
     local password        = args.password or ""
-    local modkey          = args.modkey or modkey or "Mod4"
     local delayed_connect = host == "localhost" and args.delayed_connect
     local delayed_timeout = args.delayed_timeout or 60
     local terminal        = args.terminal or terminal or "x-terminal-emulator"
@@ -140,12 +143,12 @@ function mpd.new(args)
     end
 
     self.widget:buttons(awful.util.table.join(
-        awful.button({        }, 1, function() self:toggle_play() end),
-        awful.button({        }, 3, function()
-                                        awful.spawn(mpdclient, false)
-                                    end),
-        awful.button({ modkey }, 1, function() self:previous() end),
-        awful.button({ modkey }, 3, function() self:next() end)
+        awful.button({       }, 1, function() self:toggle_play() end),
+        awful.button({       }, 3, function()
+                                       awful.spawn(mpdclient, false)
+                                   end),
+        awful.button({ Shift }, 1, function() self:previous() end),
+        awful.button({ Shift }, 3, function() self:next() end)
     ))
 
     return self
