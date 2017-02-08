@@ -10,6 +10,7 @@ function alsavolume:_update_widget()
         local status = stdout
         local volume = string.match(status, "(%d?%d?%d)%%")
         local sscolor = beautiful.widget_fg_urgent or beautiful.bg_urgent or "#ff0000"
+        local colorinactive = beautiful.widget_fg_inactive or beautiful.fg_normal or "#ffffff"
 
         status = string.match(status, "%[(o[^%]]*)%]")
 
@@ -18,7 +19,7 @@ function alsavolume:_update_widget()
         elseif string.find(status, "on", 1, true) then
             volume = volume .. "%"
         else
-            volume = '<span strikethrough="true" strikethrough_color="' .. sscolor .. '">' .. volume .. '%</span>'
+            volume = '<span strikethrough="true" strikethrough_color="' .. sscolor .. '" color="' .. colorinactive .. '">' .. volume .. '%</span>'
         end
 
         self.widget.markup = volume
