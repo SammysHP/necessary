@@ -67,4 +67,4 @@ function smapibat.new(args)
     return { widget = w }
 end
 
-return smapibat
+return setmetatable(smapibat, { __call = function(_, ...) return smapibat.new(...) end })

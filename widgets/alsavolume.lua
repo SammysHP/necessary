@@ -70,4 +70,4 @@ function alsavolume.new(args)
     return self
 end
 
-return alsavolume
+return setmetatable(alsavolume, { __call = function(_, ...) return alsavolume.new(...) end })

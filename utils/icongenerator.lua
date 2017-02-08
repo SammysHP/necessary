@@ -25,4 +25,4 @@ function icongenerator.new(path, extension, width)
     })
 end
 
-return icongenerator
+return setmetatable(icongenerator, { __call = function(_, ...) return icongenerator.new(...) end })

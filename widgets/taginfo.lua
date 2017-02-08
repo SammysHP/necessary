@@ -23,4 +23,4 @@ function taginfo.new(screen)
     return { widget = w }
 end
 
-return taginfo
+return setmetatable(taginfo, { __call = function(_, ...) return taginfo.new(...) end })

@@ -122,4 +122,5 @@ function dropdown.toggle(prog, vert, horiz, width, height, sticky, screen)
     end
 end
 
+-- return setmetatable(dropdown, { __call = function(_, ...) return dropdown.toggle(...) end })
 return dropdown

@@ -154,4 +154,4 @@ function mpd.new(args)
     return self
 end
 
-return mpd
+return setmetatable(mpd, { __call = function(_, ...) return mpd.new(...) end })
