@@ -147,8 +147,8 @@ function mpd.new(args)
         awful.button({       }, 3, function()
                                        awful.spawn(mpdclient, false)
                                    end),
-        awful.button({ Shift }, 1, function() self:previous() end),
-        awful.button({ Shift }, 3, function() self:next() end)
+        awful.button({ "Shift" }, 1, function() self:previous() end),
+        awful.button({ "Shift" }, 3, function() self:next() end)
     ))
 
     return self
