@@ -1,126 +1,89 @@
--------------------------------------------------------------------
--- Drop-down applications manager for the awesome window manager
--------------------------------------------------------------------
--- Coded  by: * Lucas de Vries <lucas@glacicle.com>
--- Hacked by: * Adrian C. (anrxc) <anrxc@sysphere.org>
--- Hacked by: * Sven Greiner (SammysHP) <sven@sammyshp.de>
--- Licensed under the WTFPL version 2
---   * http://sam.zoy.org/wtfpl/COPYING
--------------------------------------------------------------------
--- Parameters:
---   prog   - Program to run; "urxvt", "gmrun", "thunderbird"
---   vert   - Vertical; "bottom", "center" or "top" (default)
---   horiz  - Horizontal; "left", "right" or "center" (default)
---   width  - Width in absolute pixels, or width percentage
---            when <= 1 (1 (100% of the screen) by default)
---   height - Height in absolute pixels, or height percentage
---            when <= 1 (0.25 (25% of the screen) by default)
---   sticky - Visible on all tags, false by default
---   screen - Screen (optional), mouse.screen by default
--------------------------------------------------------------------
-
 local awful = require("awful")
+local gears = require("gears")
 local capi = {
-    mouse = mouse,
     client = client,
-    screen = screen
 }
 
 local dropdown = {}
 
-local dropclients = {}
+--- Toggle a dropdown client.
+-- @param string prog_cmd The command to run
+-- @tparam table args Arguments.
+-- @tparam[opt=1] number args.width Width of the client 0..1 in percent, above 1 in pixels
+-- @tparam[opt=0.4] number args.height Height of the client 0..1 in percent, above 1 in pixels
+-- @tparam[opt=false] boolean args.sticky If the client should stay visible on all tags
+-- @tparam[opt=awful.screen.focused()] screen args.screen Screen on which the client should be toggled
+-- @tparam[opt=awful.placement.top] object args.placement The placement of the client
+-- @function necessary.utils.dropdown.toggle
+function dropdown.toggle(prog_cmd, args)
+    args            = args           or {}
+    local width     = args.width     or 1
+    local height    = args.height    or 0.4
+    local sticky    = args.sticky    or false
+    local screen    = args.screen    or awful.screen.focused()
+    local placement = args.placement or awful.placement.top
 
--- Create a new window for the drop-down application when it doesn't
--- exist, or toggle between hidden and visible states when it does
-function dropdown.toggle(prog, vert, horiz, width, height, sticky, screen)
-    vert   = vert   or "top"
-    horiz  = horiz  or "center"
-    width  = width  or 1
-    height = height or 0.25
-    sticky = sticky or false
-    screen = screen or capi.mouse.screen
+    -- at least one screen should be available
+    if not screen then return end
 
-    -- Determine signal usage in this version of awesome
-    local attach_signal = capi.client.connect_signal    or capi.client.add_signal
-    local detach_signal = capi.client.disconnect_signal or capi.client.remove_signal
-
-    if not dropclients[prog] then
-        dropclients[prog] = {}
-
-        -- Add unmanage signal for scratchdrop programs
-        attach_signal("unmanage", function (c)
-            for scr, cl in pairs(dropclients[prog]) do
-                if cl == c then
-                    dropclients[prog][scr] = nil
-                end
-            end
-        end)
+    -- Create weak value table that stores references to all dropdown clients on a screen.
+    -- Each screen can contain one client per command, but multiple commands are possible.
+    if not screen.necessary_dropdown_clients then
+        screen.necessary_dropdown_clients = setmetatable({}, { __mode = 'v' })
     end
 
-    if not dropclients[prog][screen] then
-        spawnw = function (c)
-            dropclients[prog][screen] = c
+    -- between 0 and 1 => percent, above 1 => pixels
+    if width  <= 1 then width  = screen.workarea.width  * width  end
+    if height <= 1 then height = screen.workarea.height * height end
 
-            -- Scratchdrop clients are floaters
-            c.floating = true
+    -- Helper that sets client properties so that they can be re-applied each time the client is toggled.
+    local function setup_client(c)
+        c.floating = true
+        c.ontop = true
+        c.above = true
+        c.sticky = sticky
+        c.size_hints_honor = false
+        c.skip_taskbar = true
+        c.titlebars_enabled = false
+        c.width = width - 2 * c.border_width
+        c.height = height - 2 * c.border_width
+        placement(c)
+        c:raise()
+    end
 
-            -- Client geometry and placement
-            local screengeom = capi.screen[screen].workarea
+    local c = screen.necessary_dropdown_clients[prog_cmd]
+    if c and c.valid then
+        -- client is available for this command
 
-            if width  <= 1 then width  = screengeom.width  * width  end
-            if height <= 1 then height = screengeom.height * height end
-
-            if     horiz == "left"  then x = screengeom.x
-            elseif horiz == "right" then x = screengeom.width - width
-            else   x =  screengeom.x+(screengeom.width-width)/2 end
-
-            if     vert == "bottom" then y = screengeom.height + screengeom.y - height
-            elseif vert == "center" then y = screengeom.y+(screengeom.height-height)/2
-            else   y =  screengeom.y - screengeom.y end
-
-            -- Client properties
-            c:geometry({ x = x, y = y, width = width - 2, height = height - 2 })
-            c.ontop = true
-            c.above = true
-            c.skip_taskbar = true
-            if sticky then c.sticky = true end
-            if c.titlebar then awful.titlebar.remove(c) end
-
-            c:raise()
-            capi.client.focus = c
-            detach_signal("manage", spawnw)
-        end
-
-        -- Add manage signal and spawn the program
-        attach_signal("manage", spawnw)
-        awful.spawn(prog, false)
-    else
-        -- Get a running client
-        c = dropclients[prog][screen]
-
-        -- Switch the client to the current workspace
-        if c:isvisible() == false then c.hidden = true
+        -- move to selected tag
+        if not c:isvisible() then
+            c.hidden = true
             c:move_to_tag(screen.selected_tag)
         end
 
-        -- Focus and raise if hidden
+        -- toggle visibility
         if c.hidden then
-            -- Make sure it is centered
-            -- if vert  == "center" then awful.placement.center_vertical(c)   end
-            -- if horiz == "center" then awful.placement.center_horizontal(c) end
+            setup_client(c)
             c.hidden = false
-            c:raise()
             capi.client.focus = c
-        else -- Hide and detach tags if not
+        else
             c.hidden = true
-            local ctags = c:tags()
-            for i, t in pairs(ctags) do
-                ctags[i] = nil
-            end
-            c:tags(ctags)
+            c:tags({})
         end
+    else
+        -- no suitable client, create one
+        awful.spawn(
+            prog_cmd,
+            {},
+            function (c)
+                screen.necessary_dropdown_clients[prog_cmd] = c
+
+                -- Workaround to set client properties after all rules are applied
+                -- See https://github.com/awesomeWM/awesome/pull/1487
+                gears.timer.delayed_call(function() setup_client(c) end)
+            end
+        )
     end
 end
 
--- return setmetatable(dropdown, { __call = function(_, ...) return dropdown.toggle(...) end })
-return dropdown
+return setmetatable(dropdown, { __call = function(_, ...) return dropdown.toggle(...) end })
