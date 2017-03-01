@@ -17,20 +17,22 @@ function mpd:_update_widget()
         return track .. "/" .. total
     end
 
+    local color_inactive = beautiful.widget_fg_inactive
+    local widget_text = ""
     if state == "play" then
-        self.widget.text = "▶ " .. playlist_status()
+        color_inactive = nil
+        widget_text = "▶ " .. playlist_status()
     elseif state == "pause" then
-        self.widget.text = "⏸ " .. playlist_status()
+        widget_text = "⏸ " .. playlist_status()
     elseif state == "stop" then
-        self.widget.text = "⏹ " .. playlist_status()
+        widget_text = "⏹ " .. playlist_status()
     else
-        local text = '❌ -/-'
-        local color = beautiful.widget_fg_inactive
-        if color then
-            text = '<span color="' .. color .. '">' .. text .. '</span>'
-        end
-        self.widget.markup = text
+        widget_text = '❌ -/-'
     end
+    if color_inactive then
+        widget_text = '<span color="' .. color_inactive .. '">' .. widget_text .. '</span>'
+    end
+    self.widget.markup = widget_text
 
     local tooltip_text = ""
     if self._state.currentsong.title then
