@@ -82,9 +82,9 @@ function mpd.new(args)
     }, { __index = mpd })
 
     args = args or {}
-    local host            = args.host or "localhost"
-    local port            = args.port or 6600
-    local password        = args.password or ""
+    local host            = args.host
+    local port            = args.port
+    local password        = args.password
     local delayed_connect = host == "localhost" and args.delayed_connect
     local delayed_timeout = args.delayed_timeout or 60
     local terminal        = args.terminal or terminal or "x-terminal-emulator"
